@@ -55,6 +55,7 @@ func Routers() *gin.Engine {
 	exampleRouter := router.RouterGroupApp.Example
 	lotteryRouter := router.RouterGroupApp.Lottery
 	qianwenRouter := router.RouterGroupApp.Qianwen
+	localaiRouter := router.RouterGroupApp.LocalAI
 	// 如果想要不使用nginx代理前端网页，可以修改 web/.env.production 下的
 	// VUE_APP_BASE_API = /
 	// VUE_APP_BASE_PATH = http://localhost
@@ -89,6 +90,7 @@ func Routers() *gin.Engine {
 		systemRouter.InitInitRouter(PublicGroup)  // 自动初始化相关
 		lotteryRouter.InitLotteryRouter(PublicGroup) // 彩票查询路由 不做鉴权
 		qianwenRouter.InitQianwenRouter(PublicGroup) // 通义千问路由 不做鉴权
+		localaiRouter.InitLocalAIRouter(PublicGroup) // 本地AI路由 不做鉴权
 	}
 
 	{

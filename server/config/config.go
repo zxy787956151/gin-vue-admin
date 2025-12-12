@@ -40,4 +40,7 @@ type Server struct {
 
 	// 通义千问配置
 	Qianwen Qianwen `mapstructure:"qianwen" json:"qianwen" yaml:"qianwen"`
+
+	// 本地AI配置
+	LocalAI LocalAI `mapstructure:"local-ai" json:"local-ai" yaml:"local-ai"`
 }

@@ -286,3 +286,49 @@ mcp:
 qianwen:
     api-key: "sk-6d31451a5ef44ae1b86be150401b0cee" # 请在 https://dashscope.console.aliyun.com/ 获取 API Key
     model: "qwen-turbo" # 使用的模型，qwen-turbo 为免费模型
+
+# 本地AI配置
+local-ai:
+    # 本地LLM配置
+    llm:
+        backend: "ollama"                    # 后端类型: ollama, llama.cpp, vllm
+        base-url: "http://localhost:11434"   # Ollama API地址
+        model: "qwen2.5:7b"                  # 使用的模型
+        timeout: 300                         # 请求超时时间（秒）
+        max-tokens: 2000                     # 最大生成token数
+    
+    # 嵌入模型配置
+    embedding:
+        type: "local"                        # local 或 api
+        base-url: "http://localhost:5001"    # 嵌入服务地址
+        model: "all-MiniLM-L6-v2"           # 嵌入模型名称
+        dimension: 384                       # 向量维度
+    
+    # 向量数据库配置
+    vector-store:
+        type: "local"                        # chroma, qdrant, local
+        host: "localhost:8000"               # 向量数据库地址
+        collection: "knowledge_base"         # 集合名称
+        data-path: "./data/vector"           # 本地存储路径
+    
+    # 训练配置
+    training:
+        enabled: true                        # 是否启用训练
+        data-path: "./data/training"         # 训练数据路径
+        output-path: "./models/finetuned"    # 模型输出路径
+        auto-train: false                    # 是否自动训练
+        min-examples: 100                    # 触发训练的最小样本数
+        epochs: 3                            # 训练轮数
+        batch-size: 4                        # 批次大小
+        learning-rate: 0.0002                # 学习率
+    
+    # 知识库配置
+    knowledge:
+        data-path: "./knowledge_base"        # 知识库路径
+        supported-ext:                       # 支持的文件扩展名
+            - ".txt"
+            - ".md"
+            - ".pdf"
+            - ".doc"
+        chunk-size: 500                      # 文本分块大小
+        chunk-overlap: 50                    # 分块重叠大小
