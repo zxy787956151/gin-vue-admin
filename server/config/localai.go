@@ -57,3 +57,4 @@ type KnowledgeConfig struct {
 	ChunkOverlap int      `mapstructure:"chunk-overlap" json:"chunk-overlap" yaml:"chunk-overlap"` // 分块重叠大小
 }
 
+

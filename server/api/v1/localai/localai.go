@@ -215,3 +215,4 @@ func (l *LocalAIApi) DeleteDocument(c *gin.Context) {
 	response.OkWithMessage("文档已删除", c)
 }
 
+

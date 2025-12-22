@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
@@ -232,4 +231,5 @@ func (s *VectorStoreService) Clear() error {
 	s.documents = make(map[string]localai.Document)
 	return s.saveToDisk()
 }
+
 

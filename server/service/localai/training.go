@@ -47,7 +47,7 @@ func NewTrainingService() *TrainingService {
 }
 
 // AddExample 添加训练样本
-func (s *TrainingService) AddExample(question, context, answer string, rating float32, feedback string, source string) (string, error) {
+func (s *TrainingService) AddExample(question, contextStr, answer string, rating float32, feedback string, source string) (string, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -56,7 +56,7 @@ func (s *TrainingService) AddExample(question, context, answer string, rating fl
 	example := localai.TrainingExample{
 		ID:        exampleID,
 		Question:  question,
-		Context:   context,
+		Context:   contextStr,
 		Answer:    answer,
 		Rating:    rating,
 		Feedback:  feedback,
@@ -229,4 +229,5 @@ func (s *TrainingService) GetTrainingStatus() (bool, float32, string) {
 
 	return s.isTraining, s.trainingProgress, s.trainingStatus
 }
+
 

@@ -18,3 +18,4 @@ func GetRAGService() *RAGService {
 	return ragServiceInstance
 }
 
+

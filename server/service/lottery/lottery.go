@@ -11,61 +11,223 @@ import (
 
 type LotteryService struct{}
 
-// CheckLottery 检查彩票中奖情况
+// 写死的购买号码
+var (
+	// 双色球购买号码: 红球 01 05 09 15 19 30, 蓝球 05
+	mySSQNumbers = lottery.SSQNumbers{
+		RedBalls: []int{1, 5, 9, 15, 19, 30},
+		BlueBall: 5,
+	}
+
+	// 大乐透购买号码: 前区 05 09 15 19 30, 后区 02 10
+	myDLTNumbers = lottery.DLTNumbers{
+		FrontZone: []int{5, 9, 15, 19, 30},
+		BackZone:  []int{2, 10},
+	}
+)
+
+// CheckLottery 检查彩票中奖情况（支持批量多期）
 func (l *LotteryService) CheckLottery(req request.CheckLotteryReq) (response.CheckLotteryResp, error) {
 	resp := response.CheckLotteryResp{
 		LotteryType: req.LotteryType,
-		Results:     []response.LotteryResult{},
+		Results:     []response.PeriodResult{},
 	}
 
 	switch req.LotteryType {
 	case lottery.SSQ:
 		// 双色球
-		if req.WinningSSQ == nil {
-			return resp, errors.New("双色球类型必须提供中奖号码")
+		if len(req.WinningSSQ) == 0 {
+			return resp, errors.New("双色球类型必须提供至少一期中奖号码")
 		}
-		if len(req.PurchasedSSQ) == 0 {
-			return resp, errors.New("请提供购买的双色球号码")
-		}
-		// 验证中奖号码
-		if err := validateSSQNumbers(*req.WinningSSQ); err != nil {
-			return resp, err
-		}
-		// 批量检查
-		for _, purchased := range req.PurchasedSSQ {
-			if err := validateSSQNumbers(purchased); err != nil {
-				return resp, err
+		
+		// 批量检测每一期
+		for i, winning := range req.WinningSSQ {
+			// 验证中奖号码
+			if err := validateSSQNumbers(winning); err != nil {
+				return resp, fmt.Errorf("第%d期号码格式错误: %v", i+1, err)
 			}
-			result := l.checkSSQ(*req.WinningSSQ, purchased)
+			
+			// 检测本期
+			result := l.checkSSQPeriod(winning, i+1)
 			resp.Results = append(resp.Results, result)
+			
+			if result.IsWinning {
+				resp.WinningCount++
+			}
 		}
+		
+		resp.TotalPeriods = len(req.WinningSSQ)
 
 	case lottery.DLT:
 		// 大乐透
-		if req.WinningDLT == nil {
-			return resp, errors.New("大乐透类型必须提供中奖号码")
+		if len(req.WinningDLT) == 0 {
+			return resp, errors.New("大乐透类型必须提供至少一期中奖号码")
 		}
-		if len(req.PurchasedDLT) == 0 {
-			return resp, errors.New("请提供购买的大乐透号码")
-		}
-		// 验证中奖号码
-		if err := validateDLTNumbers(*req.WinningDLT); err != nil {
-			return resp, err
-		}
-		// 批量检查
-		for _, purchased := range req.PurchasedDLT {
-			if err := validateDLTNumbers(purchased); err != nil {
-				return resp, err
+		
+		// 批量检测每一期
+		for i, winning := range req.WinningDLT {
+			// 验证中奖号码
+			if err := validateDLTNumbers(winning); err != nil {
+				return resp, fmt.Errorf("第%d期号码格式错误: %v", i+1, err)
 			}
-			result := l.checkDLT(*req.WinningDLT, purchased)
+			
+			// 检测本期
+			result := l.checkDLTPeriod(winning, i+1)
 			resp.Results = append(resp.Results, result)
+			
+			if result.IsWinning {
+				resp.WinningCount++
+			}
 		}
+		
+		resp.TotalPeriods = len(req.WinningDLT)
 
 	default:
 		return resp, errors.New("不支持的彩票类型，仅支持：双色球、大乐透")
 	}
 
 	return resp, nil
+}
+
+// checkSSQPeriod 检查单期双色球
+func (l *LotteryService) checkSSQPeriod(winning lottery.SSQNumbers, period int) response.PeriodResult {
+	result := response.PeriodResult{
+		Period:           period,
+		PurchasedNumbers: mySSQNumbers,
+		WinningNumbers:   winning,
+	}
+	
+	// 计算红球匹配数
+	redMatch := 0
+	for _, pb := range mySSQNumbers.RedBalls {
+		for _, wb := range winning.RedBalls {
+			if pb == wb {
+				redMatch++
+				break
+			}
+		}
+	}
+	
+	// 蓝球是否匹配
+	blueMatch := mySSQNumbers.BlueBall == winning.BlueBall
+	
+	// 判断奖项
+	result.MatchDetail = fmt.Sprintf("红球匹配%d个", redMatch)
+	if blueMatch {
+		result.MatchDetail += "，蓝球匹配"
+	} else {
+		result.MatchDetail += "，蓝球未匹配"
+	}
+	
+	if redMatch == 6 && blueMatch {
+		result.PrizeLevel = 1
+		result.Prize = "一等奖"
+		result.IsWinning = true
+	} else if redMatch == 6 {
+		result.PrizeLevel = 2
+		result.Prize = "二等奖"
+		result.IsWinning = true
+	} else if redMatch == 5 && blueMatch {
+		result.PrizeLevel = 3
+		result.Prize = "三等奖"
+		result.IsWinning = true
+	} else if redMatch == 5 || (redMatch == 4 && blueMatch) {
+		result.PrizeLevel = 4
+		result.Prize = "四等奖"
+		result.IsWinning = true
+	} else if redMatch == 4 || (redMatch == 3 && blueMatch) {
+		result.PrizeLevel = 5
+		result.Prize = "五等奖"
+		result.IsWinning = true
+	} else if blueMatch {
+		result.PrizeLevel = 6
+		result.Prize = "六等奖"
+		result.IsWinning = true
+	} else {
+		result.PrizeLevel = 0
+		result.Prize = "未中奖"
+		result.IsWinning = false
+	}
+	
+	return result
+}
+
+// checkDLTPeriod 检查单期大乐透
+func (l *LotteryService) checkDLTPeriod(winning lottery.DLTNumbers, period int) response.PeriodResult {
+	result := response.PeriodResult{
+		Period:           period,
+		PurchasedNumbers: myDLTNumbers,
+		WinningNumbers:   winning,
+	}
+	
+	// 计算前区匹配数
+	frontMatch := 0
+	for _, pf := range myDLTNumbers.FrontZone {
+		for _, wf := range winning.FrontZone {
+			if pf == wf {
+				frontMatch++
+				break
+			}
+		}
+	}
+	
+	// 计算后区匹配数
+	backMatch := 0
+	for _, pb := range myDLTNumbers.BackZone {
+		for _, wb := range winning.BackZone {
+			if pb == wb {
+				backMatch++
+				break
+			}
+		}
+	}
+	
+	// 判断奖项
+	result.MatchDetail = fmt.Sprintf("前区匹配%d个，后区匹配%d个", frontMatch, backMatch)
+	
+	if frontMatch == 5 && backMatch == 2 {
+		result.PrizeLevel = 1
+		result.Prize = "一等奖"
+		result.IsWinning = true
+	} else if frontMatch == 5 && backMatch == 1 {
+		result.PrizeLevel = 2
+		result.Prize = "二等奖"
+		result.IsWinning = true
+	} else if frontMatch == 5 && backMatch == 0 {
+		result.PrizeLevel = 3
+		result.Prize = "三等奖"
+		result.IsWinning = true
+	} else if frontMatch == 4 && backMatch == 2 {
+		result.PrizeLevel = 4
+		result.Prize = "四等奖"
+		result.IsWinning = true
+	} else if frontMatch == 4 && backMatch == 1 {
+		result.PrizeLevel = 5
+		result.Prize = "五等奖"
+		result.IsWinning = true
+	} else if frontMatch == 3 && backMatch == 2 {
+		result.PrizeLevel = 6
+		result.Prize = "六等奖"
+		result.IsWinning = true
+	} else if frontMatch == 4 && backMatch == 0 {
+		result.PrizeLevel = 7
+		result.Prize = "七等奖"
+		result.IsWinning = true
+	} else if (frontMatch == 3 && backMatch == 1) || (frontMatch == 2 && backMatch == 2) {
+		result.PrizeLevel = 8
+		result.Prize = "八等奖"
+		result.IsWinning = true
+	} else if (frontMatch == 3 && backMatch == 0) || (frontMatch == 1 && backMatch == 2) || (frontMatch == 2 && backMatch == 1) || (frontMatch == 0 && backMatch == 2) {
+		result.PrizeLevel = 9
+		result.Prize = "九等奖"
+		result.IsWinning = true
+	} else {
+		result.PrizeLevel = 0
+		result.Prize = "未中奖"
+		result.IsWinning = false
+	}
+	
+	return result
 }
 
 // validateSSQNumbers 验证双色球号码
@@ -127,127 +289,5 @@ func validateDLTNumbers(numbers lottery.DLTNumbers) error {
 		seen[num] = true
 	}
 	return nil
-}
-
-// checkSSQ 检查双色球中奖情况
-func (l *LotteryService) checkSSQ(winning, purchased lottery.SSQNumbers) response.LotteryResult {
-	// 计算红球匹配数
-	redMatch := 0
-	for _, pb := range purchased.RedBalls {
-		for _, wb := range winning.RedBalls {
-			if pb == wb {
-				redMatch++
-				break
-			}
-		}
-	}
-
-	// 蓝球是否匹配
-	blueMatch := purchased.BlueBall == winning.BlueBall
-
-	// 判断奖项
-	prizeLevel := 0
-	prize := "未中奖"
-	matchDetail := fmt.Sprintf("红球匹配%d个", redMatch)
-	if blueMatch {
-		matchDetail += "，蓝球匹配"
-	} else {
-		matchDetail += "，蓝球未匹配"
-	}
-
-	if redMatch == 6 && blueMatch {
-		prizeLevel = 1
-		prize = "一等奖"
-	} else if redMatch == 6 {
-		prizeLevel = 2
-		prize = "二等奖"
-	} else if redMatch == 5 && blueMatch {
-		prizeLevel = 3
-		prize = "三等奖"
-	} else if redMatch == 5 || (redMatch == 4 && blueMatch) {
-		prizeLevel = 4
-		prize = "四等奖"
-	} else if redMatch == 4 || (redMatch == 3 && blueMatch) {
-		prizeLevel = 5
-		prize = "五等奖"
-	} else if blueMatch {
-		prizeLevel = 6
-		prize = "六等奖"
-	}
-
-	return response.LotteryResult{
-		Numbers:     purchased,
-		IsWinning:   prizeLevel > 0,
-		Prize:       prize,
-		PrizeLevel:  prizeLevel,
-		MatchDetail: matchDetail,
-	}
-}
-
-// checkDLT 检查大乐透中奖情况
-func (l *LotteryService) checkDLT(winning, purchased lottery.DLTNumbers) response.LotteryResult {
-	// 计算前区匹配数
-	frontMatch := 0
-	for _, pf := range purchased.FrontZone {
-		for _, wf := range winning.FrontZone {
-			if pf == wf {
-				frontMatch++
-				break
-			}
-		}
-	}
-
-	// 计算后区匹配数
-	backMatch := 0
-	for _, pb := range purchased.BackZone {
-		for _, wb := range winning.BackZone {
-			if pb == wb {
-				backMatch++
-				break
-			}
-		}
-	}
-
-	// 判断奖项
-	prizeLevel := 0
-	prize := "未中奖"
-	matchDetail := fmt.Sprintf("前区匹配%d个，后区匹配%d个", frontMatch, backMatch)
-
-	if frontMatch == 5 && backMatch == 2 {
-		prizeLevel = 1
-		prize = "一等奖"
-	} else if frontMatch == 5 && backMatch == 1 {
-		prizeLevel = 2
-		prize = "二等奖"
-	} else if frontMatch == 5 && backMatch == 0 {
-		prizeLevel = 3
-		prize = "三等奖"
-	} else if frontMatch == 4 && backMatch == 2 {
-		prizeLevel = 4
-		prize = "四等奖"
-	} else if frontMatch == 4 && backMatch == 1 {
-		prizeLevel = 5
-		prize = "五等奖"
-	} else if frontMatch == 3 && backMatch == 2 {
-		prizeLevel = 6
-		prize = "六等奖"
-	} else if frontMatch == 4 && backMatch == 0 {
-		prizeLevel = 7
-		prize = "七等奖"
-	} else if (frontMatch == 3 && backMatch == 1) || (frontMatch == 2 && backMatch == 2) {
-		prizeLevel = 8
-		prize = "八等奖"
-	} else if (frontMatch == 3 && backMatch == 0) || (frontMatch == 1 && backMatch == 2) || (frontMatch == 2 && backMatch == 1) || (frontMatch == 0 && backMatch == 2) {
-		prizeLevel = 9
-		prize = "九等奖"
-	}
-
-	return response.LotteryResult{
-		Numbers:     purchased,
-		IsWinning:   prizeLevel > 0,
-		Prize:       prize,
-		PrizeLevel:  prizeLevel,
-		MatchDetail: matchDetail,
-	}
 }
 

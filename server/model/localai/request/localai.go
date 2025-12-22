@@ -45,3 +45,4 @@ type DeleteDocRequest struct {
 	ID string `json:"id" binding:"required"` // 文档ID
 }
 
+

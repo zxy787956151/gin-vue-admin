@@ -243,3 +243,4 @@ func (s *RAGService) DeleteDocument(ctx context.Context, docID string) error {
 	return s.vectorStore.DeleteDocument(ctx, docID)
 }
 
+
