@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  vllm:
+    image: vllm/vllm-openai:v0.4.2
+    container_name: vllm-qwen
+    restart: unless-stopped
+
+    runtime: nvidia
+
+    ports:
+      - "8000:8000"
+
+    volumes:
+      - ./cache:/root/.cache
+
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - CUDA_VISIBLE_DEVICES=0
+      - HF_ENDPOINT=https://hf-mirror.com
+
+    command: >
+      --model Qwen/Qwen2.5-7B-Instruct-AWQ
+      --quantization awq
+      --host 0.0.0.0
+      --port 8000
+      --trust-remote-code
+      --max-model-len 4096
+      --gpu-memory-utilization 0.9
