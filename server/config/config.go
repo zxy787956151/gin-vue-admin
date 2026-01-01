@@ -43,4 +43,8 @@ type Server struct {
 
 	// 本地AI配置
 	LocalAI LocalAI `mapstructure:"local-ai" json:"local-ai" yaml:"local-ai"`
+
+	// 个人资产配置
+	Asset  Asset `mapstructure:"asset" json:"asset" yaml:"asset"`
+	Asset2 Asset `mapstructure:"asset2" json:"asset2" yaml:"asset2"`
 }

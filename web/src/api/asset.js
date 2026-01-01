@@ -13,3 +13,17 @@ export const getAssetDistribution = () => {
     method: 'get'
   })
 }
+
+// @Tags Asset
+// @Summary 获取个人资产分布数据2
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Success 200 {string} json "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /asset/distribution2 [get]
+export const getAssetDistribution2 = () => {
+  return service({
+    url: '/asset/distribution2',
+    method: 'get'
+  })
+}

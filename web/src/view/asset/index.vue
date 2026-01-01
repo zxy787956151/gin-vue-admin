@@ -4,18 +4,35 @@
       <template #header>
         <div class="card-header">
           <span class="title">个人资产视图</span>
-          <el-button type="primary" :icon="Refresh" circle @click="fetchData" :loading="loading" />
+          <div class="header-buttons">
+            <el-button 
+              :type="isDecrypted ? 'success' : 'warning'" 
+              :icon="isDecrypted ? View : Hide" 
+              circle 
+              @click="showPasswordDialog"
+              :title="isDecrypted ? '锁定金额' : '解密金额'"
+            />
+            <el-button type="primary" :icon="Refresh" circle @click="fetchData" :loading="loading" />
+          </div>
         </div>
       </template>
       
       <div v-loading="loading" class="content-wrapper">
         <div class="summary-section">
-          <el-statistic title="总资产" :value="totalAsset" :precision="2">
-            <template #prefix>
-              <el-icon style="vertical-align: -0.125em"><Money /></el-icon>
-            </template>
-            <template #suffix>元</template>
-          </el-statistic>
+          <div v-if="isDecrypted">
+            <el-statistic title="总资产" :value="assetData.total" :precision="2">
+              <template #prefix>
+                <el-icon style="vertical-align: -0.125em"><Money /></el-icon>
+              </template>
+              <template #suffix>元</template>
+            </el-statistic>
+          </div>
+          <div v-else class="hidden-amount-display">
+            <div class="statistic-title">总资产</div>
+            <div class="hidden-amount-content">
+              <el-icon class="hidden-amount-icon large-icon"><Hide /></el-icon>
+            </div>
+          </div>
         </div>
         
         <div class="chart-section" v-if="assetData.items.length > 0">
@@ -33,7 +50,8 @@
             <el-table-column prop="name" label="资产类型" width="180" />
             <el-table-column prop="value" label="金额" width="180">
               <template #default="{ row }">
-                <span>{{ formatCurrency(row.value) }}</span>
+                <span v-if="isDecrypted">{{ formatCurrency(row.value) }}</span>
+                <el-icon v-else class="hidden-amount-icon"><Hide /></el-icon>
               </template>
             </el-table-column>
             <el-table-column prop="percentage" label="占比">
@@ -45,17 +63,51 @@
         </div>
       </div>
     </el-card>
+    
+    <!-- 密码输入弹窗 -->
+    <el-dialog
+      v-model="passwordDialogVisible"
+      title="解密金额"
+      width="400px"
+      :close-on-click-modal="false"
+    >
+      <el-form :model="passwordForm" label-width="80px">
+        <el-form-item label="密码">
+          <el-input 
+            v-model="passwordForm.password" 
+            type="password" 
+            placeholder="请输入密码"
+            show-password
+            @keyup.enter="verifyPassword"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="passwordDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="verifyPassword">确定</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Refresh, Money } from '@element-plus/icons-vue'
+import { Refresh, Money, View, Hide } from '@element-plus/icons-vue'
+import { useRoute } from 'vue-router'
 import Chart from '@/components/charts/index.vue'
 import useChartOption from '@/hooks/charts'
 import { useAppStore } from '@/pinia'
-import { getAssetDistribution } from '@/api/asset'
+import { getAssetDistribution, getAssetDistribution2 } from '@/api/asset'
+
+// 解密密码（写死）
+const DECRYPT_PASSWORD = 'zxyZXY2147483647.'
+
+const route = useRoute()
+// 根据路由name判断使用哪个接口
+const isAsset2 = computed(() => route.name === 'assetView2')
 
 defineOptions({
   name: 'AssetView'
@@ -68,9 +120,20 @@ const assetData = ref({
   timestamp: 0
 })
 
-// 计算总资产
-const totalAsset = computed(() => {
-  return assetData.value.total
+// 解密状态
+const isDecrypted = ref(false)
+const passwordDialogVisible = ref(false)
+const passwordForm = ref({
+  password: ''
+})
+
+// 显示的总资产（根据解密状态）
+const displayTotalAsset = computed(() => {
+  if (isDecrypted) {
+    return assetData.value.total
+  }
+  // 未解密时返回0，但显示时会被图标替代
+  return 0
 })
 
 // 计算表格数据（包含占比）
@@ -90,7 +153,7 @@ const colors = [
 
 // 使用useChartOption，但通过访问assetData.value确保响应式追踪
 const { chartOption } = useChartOption((isDark) => {
-  // 在函数内部访问assetData.value，useChartOption的computed会追踪这个依赖
+  // 在函数内部访问assetData.value和isDecrypted.value，useChartOption的computed会追踪这个依赖
   const pieData = assetData.value.items.map((item, index) => ({
     value: item.value,
     name: item.name,
@@ -106,7 +169,11 @@ const { chartOption } = useChartOption((isDark) => {
         const percentage = assetData.value.total > 0 
           ? ((params.value / assetData.value.total) * 100).toFixed(2)
           : 0
-        return `${params.name}<br/>金额: ${formatCurrency(params.value)}<br/>占比: ${percentage}%`
+        if (isDecrypted.value) {
+          return `${params.name}<br/>金额: ${formatCurrency(params.value)}<br/>占比: ${percentage}%`
+        } else {
+          return `${params.name}<br/>金额: ****<br/>占比: ${percentage}%`
+        }
       }
     },
     legend: {
@@ -131,6 +198,7 @@ const { chartOption } = useChartOption((isDark) => {
             const percentage = assetData.value.total > 0
               ? ((params.value / assetData.value.total) * 100).toFixed(1)
               : 0
+            // 标签只显示名称和占比，不显示金额
             return `${params.name}\n${percentage}%`
           }
         },
@@ -172,7 +240,11 @@ const getProgressColor = (percentage) => {
 const fetchData = async () => {
   loading.value = true
   try {
-    const res = await getAssetDistribution()
+    // 根据路由name选择不同的接口
+    const res = isAsset2.value 
+      ? await getAssetDistribution2() 
+      : await getAssetDistribution()
+    
     if (res.code === 0) {
       assetData.value = res.data
       ElMessage.success('数据加载成功')
@@ -187,6 +259,30 @@ const fetchData = async () => {
   }
 }
 
+// 显示密码输入弹窗
+const showPasswordDialog = () => {
+  if (isDecrypted.value) {
+    // 如果已解密，点击可以重新锁定
+    isDecrypted.value = false
+    ElMessage.info('已锁定金额显示')
+  } else {
+    passwordDialogVisible.value = true
+    passwordForm.value.password = ''
+  }
+}
+
+// 验证密码
+const verifyPassword = () => {
+  if (passwordForm.value.password === DECRYPT_PASSWORD) {
+    isDecrypted.value = true
+    passwordDialogVisible.value = false
+    passwordForm.value.password = ''
+    ElMessage.success('解密成功')
+  } else {
+    ElMessage.error('密码错误')
+  }
+}
+
 // 页面挂载时获取数据
 onMounted(() => {
   fetchData()
@@ -198,16 +294,21 @@ onMounted(() => {
   padding: 20px;
   
   .box-card {
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      
-      .title {
-        font-size: 18px;
-        font-weight: bold;
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        
+        .title {
+          font-size: 18px;
+          font-weight: bold;
+        }
+        
+        .header-buttons {
+          display: flex;
+          gap: 10px;
+        }
       }
-    }
     
     .content-wrapper {
       .summary-section {
@@ -216,6 +317,25 @@ onMounted(() => {
         padding: 20px;
         background: var(--el-bg-color-page);
         border-radius: 8px;
+        
+        .hidden-amount-display {
+          .statistic-title {
+            font-size: 14px;
+            color: var(--el-text-color-regular);
+            margin-bottom: 10px;
+          }
+          
+          .hidden-amount-content {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            
+            .large-icon {
+              font-size: 48px;
+              color: var(--el-text-color-placeholder);
+            }
+          }
+        }
       }
       
       .chart-section {
@@ -227,6 +347,11 @@ onMounted(() => {
       
       .table-section {
         margin-top: 20px;
+        
+        .hidden-amount-icon {
+          font-size: 18px;
+          color: var(--el-text-color-placeholder);
+        }
       }
     }
   }
