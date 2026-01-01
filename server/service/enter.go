@@ -1,6 +1,7 @@
 package service
 
 import (
+	"github.com/flipped-aurora/gin-vue-admin/server/service/asset"
 	"github.com/flipped-aurora/gin-vue-admin/server/service/example"
 	"github.com/flipped-aurora/gin-vue-admin/server/service/localai"
 	"github.com/flipped-aurora/gin-vue-admin/server/service/lottery"
@@ -16,4 +17,5 @@ type ServiceGroup struct {
 	LotteryServiceGroup lottery.ServiceGroup
 	QianwenServiceGroup qianwen.ServiceGroup
 	LocalAIServiceGroup localai.ServiceGroup
+	AssetServiceGroup   asset.ServiceGroup
 }

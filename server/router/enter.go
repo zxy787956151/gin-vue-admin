@@ -1,6 +1,7 @@
 package router
 
 import (
+	"github.com/flipped-aurora/gin-vue-admin/server/router/asset"
 	"github.com/flipped-aurora/gin-vue-admin/server/router/example"
 	"github.com/flipped-aurora/gin-vue-admin/server/router/localai"
 	"github.com/flipped-aurora/gin-vue-admin/server/router/lottery"
@@ -16,4 +17,5 @@ type RouterGroup struct {
 	Lottery lottery.RouterGroup
 	Qianwen qianwen.RouterGroup
 	LocalAI localai.RouterGroup
+	Asset   asset.RouterGroup
 }

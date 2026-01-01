@@ -15,5 +15,9 @@ func initBizRouter(routers ...*gin.RouterGroup) {
 	privateGroup := routers[0]
 	publicGroup := routers[1]
 
+	// 注册资产路由
+	assetRouter := router.RouterGroupApp.Asset
+	assetRouter.InitAssetRouter(privateGroup)
+
 	holder(publicGroup, privateGroup)
 }

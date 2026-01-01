@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"github.com/flipped-aurora/gin-vue-admin/server/api/v1/asset"
 	"github.com/flipped-aurora/gin-vue-admin/server/api/v1/example"
 	"github.com/flipped-aurora/gin-vue-admin/server/api/v1/localai"
 	"github.com/flipped-aurora/gin-vue-admin/server/api/v1/lottery"
@@ -16,4 +17,5 @@ type ApiGroup struct {
 	LotteryApiGroup lottery.ApiGroup
 	QianwenApiGroup qianwen.ApiGroup
 	LocalAIApiGroup localai.ApiGroup
+	AssetApiGroup   asset.ApiGroup
 }
