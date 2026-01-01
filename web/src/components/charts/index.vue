@@ -8,6 +8,7 @@
 <template>
   <VCharts
     v-if="renderChart"
+    ref="chartRef"
     :option="options"
     :autoresize="autoResize"
     :style="{ width, height }"
@@ -44,7 +45,7 @@
     GridComponent
   ])
 
-  defineProps({
+  const props = defineProps({
     options: {
       type: Object,
       default() {
@@ -64,14 +65,37 @@
       default: '100%'
     }
   })
+
+  const emit = defineEmits(['chart-click'])
+
+  const chartRef = ref(null)
   const renderChart = ref(false)
+  
   nextTick(() => {
     renderChart.value = true
+    // 当图表渲染完成后，绑定点击事件
+    nextTick(() => {
+      if (chartRef.value && chartRef.value.chart) {
+        chartRef.value.chart.on('click', (params) => {
+          emit('chart-click', params)
+        })
+      }
+    })
   })
+  
   useWindowResize(() => {
     renderChart.value = false
     nextTick(() => {
       renderChart.value = true
+      // 重新绑定点击事件
+      nextTick(() => {
+        if (chartRef.value && chartRef.value.chart) {
+          chartRef.value.chart.off('click')
+          chartRef.value.chart.on('click', (params) => {
+            emit('chart-click', params)
+          })
+        }
+      })
     })
   })
 </script>

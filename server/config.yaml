@@ -217,22 +217,62 @@ qianwen:
 asset:
     items:
         - name: "活钱管理"
-          value: 250000.00
+          value: 0.00
         - name: "稳健理财"
-          value: 180000.00
+          value: 0.00
         - name: "长期投资"
-          value: 120000.00
+          value: 0.00
         - name: "保险保障"
-          value: 150000.00
+          value: 0.00
 asset2:
     items:
         - name: "劳动所得"
-          value: 22000.00
+          value: 0.00
         - name: "资产所得"
           value: 0.00
         - name: "经营所得"
           value: 0.00
         - name: "资产转移"
+          value: 0.00
+asset3:
+    items:
+        - name: "微信零钱通"
+          value: 0.00
+        - name: "微信活期理财产品"
+          value: 2600.13
+        - name: "支付宝余额宝"
+          value: 0.00
+        - name: "招行朝朝宝"
+          value: 21585.24
+        - name: "招行零钱宝"
+          value: 10016.23
+        - name: "招行日日宝"
+          value: 10008.40
+asset4:
+    items:
+        - name: "微信定期理财产品"
+          value: 2000.11
+        - name: "支付宝定期理财产品"
+          value: 0.00
+        - name: "招行周周宝"
+          value: 10008.94
+        - name: "招行月月宝"
+          value: 10001.09
+asset5:
+    items:
+        - name: "长期投资详情1"
+          value: 0.00
+        - name: "长期投资详情2"
+          value: 0.00
+        - name: "长期投资详情3"
+          value: 0.00
+asset6:
+    items:
+        - name: "保险保障详情1"
+          value: 0.00
+        - name: "保险保障详情2"
+          value: 0.00
+        - name: "保险保障详情3"
           value: 0.00
 qiniu:
     zone: ZoneHuaDong

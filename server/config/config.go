@@ -47,4 +47,8 @@ type Server struct {
 	// 个人资产配置
 	Asset  Asset `mapstructure:"asset" json:"asset" yaml:"asset"`
 	Asset2 Asset `mapstructure:"asset2" json:"asset2" yaml:"asset2"`
+	Asset3 Asset `mapstructure:"asset3" json:"asset3" yaml:"asset3"`
+	Asset4 Asset `mapstructure:"asset4" json:"asset4" yaml:"asset4"`
+	Asset5 Asset `mapstructure:"asset5" json:"asset5" yaml:"asset5"`
+	Asset6 Asset `mapstructure:"asset6" json:"asset6" yaml:"asset6"`
 }

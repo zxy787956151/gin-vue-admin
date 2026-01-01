@@ -3,7 +3,7 @@
     <el-card class="box-card" shadow="never">
       <template #header>
         <div class="card-header">
-          <span class="title">个人资产视图</span>
+          <span class="title">{{ pageTitle }}</span>
           <div class="header-buttons">
             <el-button 
               :type="isDecrypted ? 'success' : 'warning'" 
@@ -38,7 +38,8 @@
         <div class="chart-section" v-if="assetData.items.length > 0">
           <Chart 
             :height="'500px'" 
-            :option="chartOption" 
+            :option="chartOption"
+            @chart-click="handleChartClick"
           />
         </div>
         <div v-else class="chart-section empty-chart">
@@ -93,21 +94,24 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Refresh, Money, View, Hide } from '@element-plus/icons-vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import Chart from '@/components/charts/index.vue'
 import useChartOption from '@/hooks/charts'
 import { useAppStore } from '@/pinia'
-import { getAssetDistribution, getAssetDistribution2 } from '@/api/asset'
+import { getAssetDistribution, getAssetDistribution2, getAssetDistribution3, getAssetDistributionByItemName } from '@/api/asset'
 
 // 解密密码（写死）
 const DECRYPT_PASSWORD = 'zxyZXY2147483647.'
 
 const route = useRoute()
-// 根据路由name判断使用哪个接口
+const router = useRouter()
+// 根据路由name和query参数判断使用哪个接口
 const isAsset2 = computed(() => route.name === 'assetView2')
+const isAsset3 = computed(() => route.query.detail === 'asset3')
+const selectedItemName = computed(() => route.query.itemName || '')
 
 defineOptions({
   name: 'AssetView'
@@ -127,9 +131,17 @@ const passwordForm = ref({
   password: ''
 })
 
+// 页面标题
+const pageTitle = computed(() => {
+  if (isAsset3.value) {
+    return selectedItemName.value ? `${selectedItemName.value}详情` : '资产详情'
+  }
+  return isAsset2.value ? '资产视图2' : '个人资产视图'
+})
+
 // 显示的总资产（根据解密状态）
 const displayTotalAsset = computed(() => {
-  if (isDecrypted) {
+  if (isDecrypted.value) {
     return assetData.value.total
   }
   // 未解密时返回0，但显示时会被图标替代
@@ -240,10 +252,21 @@ const getProgressColor = (percentage) => {
 const fetchData = async () => {
   loading.value = true
   try {
-    // 根据路由name选择不同的接口
-    const res = isAsset2.value 
-      ? await getAssetDistribution2() 
-      : await getAssetDistribution()
+    // 根据路由name和query参数选择不同的接口
+    let res
+    if (isAsset3.value) {
+      // 详情页：根据配置项名称获取对应的详情数据
+      const itemName = selectedItemName.value
+      if (itemName) {
+        res = await getAssetDistributionByItemName(itemName)
+      } else {
+        res = await getAssetDistribution3() // 默认使用asset3
+      }
+    } else if (isAsset2.value) {
+      res = await getAssetDistribution2()
+    } else {
+      res = await getAssetDistribution()
+    }
     
     if (res.code === 0) {
       assetData.value = res.data
@@ -256,6 +279,21 @@ const fetchData = async () => {
     ElMessage.error('获取数据失败，请稍后重试')
   } finally {
     loading.value = false
+  }
+}
+
+// 处理图表点击事件（仅在第一个asset视图时生效）
+const handleChartClick = (params) => {
+  // 只在第一个asset视图（不是asset2，不是asset3详情页）时才能点击跳转
+  if (route.name === 'assetView' && !isAsset3.value) {
+    // 跳转到详情页，使用query参数传递
+    router.push({
+      name: 'assetView',
+      query: {
+        detail: 'asset3',
+        itemName: params.name
+      }
+    })
   }
 }
 
@@ -287,6 +325,19 @@ const verifyPassword = () => {
 onMounted(() => {
   fetchData()
 })
+
+// 监听路由变化，当路由name或query参数改变时重新获取数据
+watch(
+  () => [route.name, route.query.detail, route.query.itemName],
+  ([newName, newDetail, newItemName], [oldName, oldDetail, oldItemName]) => {
+    if (newName === 'assetView' || newName === 'assetView2') {
+      console.log(`路由从 ${oldName}(${oldDetail}) 切换到 ${newName}(${newDetail})，重新获取数据。`)
+      fetchData()
+      isDecrypted.value = false // 切换页面时重置解密状态
+    }
+  },
+  { deep: true }
+)
 </script>
 
 <style scoped lang="scss">
