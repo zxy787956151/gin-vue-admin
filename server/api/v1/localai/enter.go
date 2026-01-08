@@ -6,8 +6,9 @@ type ApiGroup struct {
 	LocalAIApi
 }
 
-var (
-	localaiService = localai.GetRAGService()
-)
+// getService 获取最新的服务实例（每次调用都获取，确保使用最新配置）
+func getService() *localai.RAGService {
+	return localai.GetRAGService()
+}
 
 

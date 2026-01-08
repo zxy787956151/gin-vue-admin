@@ -26,6 +26,10 @@ type LLMService struct {
 func NewLLMService() *LLMService {
 	config := global.GVA_CONFIG.LocalAI.LLM
 	
+	// 调试日志
+	fmt.Printf("[DEBUG] NewLLMService - Backend: %s, BaseURL: %s, Model: %s\n", 
+		config.Backend, config.BaseURL, config.Model)
+	
 	timeout := time.Duration(config.Timeout) * time.Second
 	if timeout == 0 {
 		timeout = 300 * time.Second
@@ -198,6 +202,10 @@ func (s *LLMService) chatVLLM(ctx context.Context, messages []localai.ChatMessag
 
 // CheckHealth 检查模型健康状态
 func (s *LLMService) CheckHealth(ctx context.Context) error {
+	// 调试日志
+	fmt.Printf("[DEBUG] CheckHealth - backend: %s, baseURL: %s, model: %s\n", 
+		s.backend, s.baseURL, s.model)
+	
 	if s.baseURL == "" {
 		return errors.New("模型未配置")
 	}

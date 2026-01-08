@@ -27,7 +27,7 @@ func (l *LocalAIApi) Chat(c *gin.Context) {
 		return
 	}
 
-	result, err := localaiService.Chat(c.Request.Context(), req)
+	result, err := getService().Chat(c.Request.Context(), req)
 	if err != nil {
 		global.GVA_LOG.Error("本地AI聊天失败!", zap.Error(err))
 		response.FailWithMessage("聊天失败: "+err.Error(), c)
@@ -54,7 +54,7 @@ func (l *LocalAIApi) IngestDocument(c *gin.Context) {
 		return
 	}
 
-	result, err := localaiService.IngestDocument(c.Request.Context(), req)
+	result, err := getService().IngestDocument(c.Request.Context(), req)
 	if err != nil {
 		global.GVA_LOG.Error("导入文档失败!", zap.Error(err))
 		response.FailWithMessage("导入失败: "+err.Error(), c)
@@ -81,7 +81,7 @@ func (l *LocalAIApi) SearchDocuments(c *gin.Context) {
 		return
 	}
 
-	result, err := localaiService.SearchDocuments(c.Request.Context(), req)
+	result, err := getService().SearchDocuments(c.Request.Context(), req)
 	if err != nil {
 		global.GVA_LOG.Error("搜索文档失败!", zap.Error(err))
 		response.FailWithMessage("搜索失败: "+err.Error(), c)
@@ -108,7 +108,7 @@ func (l *LocalAIApi) SubmitFeedback(c *gin.Context) {
 		return
 	}
 
-	err = localaiService.SubmitFeedback(c.Request.Context(), req)
+	err = getService().SubmitFeedback(c.Request.Context(), req)
 	if err != nil {
 		global.GVA_LOG.Error("提交反馈失败!", zap.Error(err))
 		response.FailWithMessage("提交失败: "+err.Error(), c)
@@ -137,7 +137,7 @@ func (l *LocalAIApi) StartTraining(c *gin.Context) {
 
 	// 异步启动训练
 	go func() {
-		if err := localaiService.StartTraining(c.Request.Context(), req); err != nil {
+		if err := getService().StartTraining(c.Request.Context(), req); err != nil {
 			global.GVA_LOG.Error("训练失败!", zap.Error(err))
 		}
 	}()
@@ -154,7 +154,7 @@ func (l *LocalAIApi) StartTraining(c *gin.Context) {
 // @Success 200 {object} response.Response{data=response.TrainStatusResponse,msg=string} "查询成功"
 // @Router /localai/train/status [get]
 func (l *LocalAIApi) GetTrainingStatus(c *gin.Context) {
-	result := localaiService.GetTrainingStatus()
+	result := getService().GetTrainingStatus()
 	response.OkWithDetailed(result, "查询成功", c)
 }
 
@@ -167,7 +167,7 @@ func (l *LocalAIApi) GetTrainingStatus(c *gin.Context) {
 // @Success 200 {object} response.Response{data=response.StatsResponse,msg=string} "查询成功"
 // @Router /localai/stats [get]
 func (l *LocalAIApi) GetStats(c *gin.Context) {
-	result := localaiService.GetStats()
+	result := getService().GetStats()
 	response.OkWithDetailed(result, "查询成功", c)
 }
 
@@ -180,7 +180,7 @@ func (l *LocalAIApi) GetStats(c *gin.Context) {
 // @Success 200 {object} response.Response{msg=string} "服务正常"
 // @Router /localai/health [get]
 func (l *LocalAIApi) HealthCheck(c *gin.Context) {
-	err := localaiService.CheckHealth(c.Request.Context())
+	err := getService().CheckHealth(c.Request.Context())
 	if err != nil {
 		response.FailWithMessage("服务异常: "+err.Error(), c)
 		return
@@ -205,7 +205,7 @@ func (l *LocalAIApi) DeleteDocument(c *gin.Context) {
 		return
 	}
 
-	err = localaiService.DeleteDocument(c.Request.Context(), req.ID)
+	err = getService().DeleteDocument(c.Request.Context(), req.ID)
 	if err != nil {
 		global.GVA_LOG.Error("删除文档失败!", zap.Error(err))
 		response.FailWithMessage("删除失败: "+err.Error(), c)

@@ -4,6 +4,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/core"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/initialize"
+	"github.com/flipped-aurora/gin-vue-admin/server/service/localai"
 	_ "go.uber.org/automaxprocs"
 	"go.uber.org/zap"
 )
@@ -38,6 +39,7 @@ func main() {
 // 提取为单独函数以便于系统重载时调用
 func initializeSystem() {
 	global.GVA_VP = core.Viper() // 初始化Viper
+	localai.ReloadService()        // 重新加载 LocalAI 服务（使用最新配置）
 	initialize.OtherInit()
 	global.GVA_LOG = core.Zap() // 初始化zap日志库
 	zap.ReplaceGlobals(global.GVA_LOG)

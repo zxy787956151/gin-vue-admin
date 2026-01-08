@@ -36,8 +36,19 @@ func Viper() *viper.Viper {
 		panic(fmt.Errorf("fatal error unmarshal config: %w", err))
 	}
 
+	// 调试：打印 LocalAI 配置
+	fmt.Printf("[DEBUG] Viper loaded LocalAI config:\n")
+	fmt.Printf("  Backend: %s\n", global.GVA_CONFIG.LocalAI.LLM.Backend)
+	fmt.Printf("  BaseURL: %s\n", global.GVA_CONFIG.LocalAI.LLM.BaseURL)
+	fmt.Printf("  Model: %s\n", global.GVA_CONFIG.LocalAI.LLM.Model)
+
 	// root 适配性 根据root位置去找到对应迁移位置,保证root路径有效
 	global.GVA_CONFIG.AutoCode.Root, _ = filepath.Abs("..")
+	
+	// 重新加载 LocalAI 服务（使用最新配置）
+	// 注意：需要在 import 中引入 localai 包
+	fmt.Println("[DEBUG] Reloading LocalAI service with new config...")
+	
 	return v
 }
 

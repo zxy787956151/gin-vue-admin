@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  # Ollama 服务
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama-qwen
+    restart: unless-stopped
+    
+    ports:
+      - "11434:11434"
+    
+    volumes:
+      # 模型存储目录 - Mac 本地路径
+      - ~/.ollama:/root/.ollama
+      # 配置目录（可选）
+      - ./data/ollama-config:/root/.config
+    
+    networks:
+      - gin-network
+    
+    # 健康检查
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # 环境变量
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11434
+      - OLLAMA_ORIGINS=*
+      # 如果需要使用代理下载模型
+      # - HTTP_PROXY=http://proxy.example.com:8080
+      # - HTTPS_PROXY=http://proxy.example.com:8080
+  
+  # gin-vue-admin 服务 (可选，根据你的实际情况启用)
+  # 如果你的 gin 服务已经在运行，可以注释掉这部分
+  # gin-server:
+  #   build:
+  #     context: ./server
+  #     dockerfile: Dockerfile
+  #   container_name: gin-vue-admin-server
+  #   restart: unless-stopped
+  #   
+  #   ports:
+  #     - "8888:8888"
+  #   
+  #   volumes:
+  #     - ./server:/app
+  #     - ./server/log:/app/log
+  #     - ./server/config.yaml:/app/config.yaml
+  #   
+  #   environment:
+  #     # Ollama 服务地址（容器内通过服务名访问）
+  #     - LOCALAI_BASE_URL=http://ollama:11434
+  #   
+  #   depends_on:
+  #     ollama:
+  #       condition: service_healthy
+  #   
+  #   networks:
+  #     - gin-network
+
+networks:
+  gin-network:
+    driver: bridge
+    # 如果你已有网络，可以使用 external
+    # external: true
+    # name: gin-vue-admin-network
+

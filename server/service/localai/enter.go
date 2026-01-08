@@ -9,13 +9,17 @@ var (
 	ragServiceInstance *RAGService
 )
 
-func init() {
-	ragServiceInstance = NewRAGService()
+// GetRAGService 获取RAG服务实例（延迟初始化）
+func GetRAGService() *RAGService {
+	if ragServiceInstance == nil {
+		ragServiceInstance = NewRAGService()
+	}
+	return ragServiceInstance
 }
 
-// GetRAGService 获取RAG服务实例
-func GetRAGService() *RAGService {
-	return ragServiceInstance
+// ReloadService 重新加载服务（在配置加载后调用）
+func ReloadService() {
+	ragServiceInstance = NewRAGService()
 }
 
 

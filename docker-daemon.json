@@ -1,0 +1,15 @@
+{
+  "registry-mirrors": [
+    "https://docker.m.daocloud.io",
+    "https://dockerproxy.com",
+    "https://docker.nju.edu.cn",
+    "https://docker.mirrors.sjtug.sjtu.edu.cn",
+    "https://hub.rat.dev"
+  ],
+  "dns": ["8.8.8.8", "8.8.4.4"],
+  "experimental": false,
+  "features": {
+    "buildkit": true
+  }
+}
+

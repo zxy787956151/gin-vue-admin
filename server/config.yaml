@@ -94,7 +94,7 @@ local:
 local-ai:
     llm:
         backend: ollama
-        base-url: http://localhost:11434
+        base-url: http://ollama-qwen:11434
         model: qwen2.5:7b
         timeout: 300
         max-tokens: 2000
